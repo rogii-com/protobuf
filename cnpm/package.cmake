@@ -1,16 +1,17 @@
-# use new ABI
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    # see for details https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dual_abi.html
+    # and the corresponding description in https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_macros.html
     add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
 endif()
 
 if(NOT TARGET protobuf::libprotobuf)
-
     add_library(
         protobuf::libprotobuf
         STATIC
         IMPORTED
     )
-    if(MSVC)
+
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         set_target_properties(
             protobuf::libprotobuf
             PROPERTIES
@@ -28,11 +29,13 @@ if(NOT TARGET protobuf::libprotobuf)
             protobuf::libprotobuf
             PROPERTIES
                 IMPORTED_LOCATION
-                    "${CMAKE_CURRENT_LIST_DIR}/vsprojects/${PROTOBUF_ARCH_DIR}Release/libprotobuf.a"
+                ${CMAKE_CURRENT_LIST_DIR}/lib/libprotobuf.a
+
                 IMPORTED_LOCATION_DEBUG
-                    "${CMAKE_CURRENT_LIST_DIR}/vsprojects/${PROTOBUF_ARCH_DIR}Debug/libprotobuf.a"
+                ${CMAKE_CURRENT_LIST_DIR}/lib/libprotobufd.a
+
                 INTERFACE_INCLUDE_DIRECTORIES
-                    "${CMAKE_CURRENT_LIST_DIR}/src"
+                ${CMAKE_CURRENT_LIST_DIR}/include
         )
     endif()
 endif()
@@ -44,7 +47,8 @@ if(NOT TARGET protobuf::libprotoc)
         STATIC
         IMPORTED
     )
-    if(MSVC)
+
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         set_target_properties(
             protobuf::libprotoc
             PROPERTIES
@@ -62,22 +66,25 @@ if(NOT TARGET protobuf::libprotoc)
             protobuf::libprotoc
             PROPERTIES
                 IMPORTED_LOCATION
-                    "${CMAKE_CURRENT_LIST_DIR}/vsprojects/${PROTOBUF_ARCH_DIR}Release/libprotoc.a"
+                ${CMAKE_CURRENT_LIST_DIR}/lib/libprotoc.a
+
                 IMPORTED_LOCATION_DEBUG
-                    "${CMAKE_CURRENT_LIST_DIR}/vsprojects/${PROTOBUF_ARCH_DIR}Debug/libprotoc.a"
+                ${CMAKE_CURRENT_LIST_DIR}/lib/libprotocd.a
+
                 INTERFACE_INCLUDE_DIRECTORIES
-                    "${CMAKE_CURRENT_LIST_DIR}/src/google/protobuf"
+                ${CMAKE_CURRENT_LIST_DIR}/include
         )
     endif()
 endif()
 
 
 if(NOT TARGET protobuf::protoc)
-   add_executable(
+    add_executable(
         protobuf::protoc
         IMPORTED
     )
-    if(MSVC)
+
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         set_target_properties(
             protobuf::protoc
             PROPERTIES
@@ -89,7 +96,7 @@ if(NOT TARGET protobuf::protoc)
             protobuf::protoc
             PROPERTIES
                 IMPORTED_LOCATION
-                    "${CMAKE_CURRENT_LIST_DIR}/vsprojects/${PROTOBUF_ARCH_DIR}Release/protoc"
+                ${CMAKE_CURRENT_LIST_DIR}/bin/protoc
         )
     endif()
 endif()
