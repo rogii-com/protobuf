@@ -1,0 +1,6 @@
+[submodule "cnpm/protobuf-cmake"]
+	path = cnpm/protobuf-cmake
+	url = https://github.com/jesperes/protobuf-cmake.git
+[submodule "cnpm/cmake/npm"]
+	path = cnpm/cmake/npm
+	url = https://github.com/rogii-com/cnpm.git
