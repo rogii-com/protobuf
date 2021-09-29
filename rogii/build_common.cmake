@@ -1,4 +1,7 @@
-if(NOT DEFINED ROOT OR NOT DEFINED ARCH)
+if(
+    NOT DEFINED ROOT
+    OR NOT DEFINED ARCH
+)
     message(
         FATAL_ERROR
         "Assert: ROOT = ${ROOT}; ARCH = ${ARCH}"
@@ -47,19 +50,18 @@ else()
     endif()
 endif()
 
+include(
+    "${CMAKE_CURRENT_LIST_DIR}/version.cmake"
+)
+
+set(
+    BUILD_PATH
+    "${CMAKE_CURRENT_LIST_DIR}/../build"
+)
+
 set(
     PACKAGE_NAME
-    "protobuf-2.6.1-${ARCH}-${BUILD}${TAG}"
-)
-
-set(
-    DEBUG_PATH
-    "${CMAKE_CURRENT_LIST_DIR}/../../build/debug"
-)
-
-file(
-    MAKE_DIRECTORY
-    "${DEBUG_PATH}"
+    "protobuf-${ROGII_PKG_VERSION}-${ARCH}-${BUILD}${TAG}"
 )
 
 set(
@@ -67,29 +69,19 @@ set(
     ${ROOT}/${PACKAGE_NAME}
 )
 
-execute_process(
-    COMMAND
-        ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DPROTOBUF_ROOT=../.. ${CMAKE_CURRENT_LIST_DIR}/..
-    WORKING_DIRECTORY
-        ${DEBUG_PATH}
-)
-
-execute_process(
-    COMMAND
-        ${CMAKE_COMMAND} --build . --target install
-    WORKING_DIRECTORY
-        ${DEBUG_PATH}
-)
-
-# remove debug protoc
-execute_process(
-    COMMAND
-        ${CMAKE_COMMAND} -E remove_directory ${CMAKE_INSTALL_PREFIX}/bin
+set(
+    DEBUG_PATH
+    "${BUILD_PATH}/debug"
 )
 
 set(
     RELEASE_PATH
-    "${CMAKE_CURRENT_LIST_DIR}/../../build/release"
+    "${BUILD_PATH}/release"
+)
+
+file(
+    MAKE_DIRECTORY
+    "${DEBUG_PATH}"
 )
 
 file(
@@ -99,28 +91,54 @@ file(
 
 execute_process(
     COMMAND
-        ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DPROTOBUF_ROOT=../.. ${CMAKE_CURRENT_LIST_DIR}/..
+    ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DPROTOBUF_ROOT=../.. ${CMAKE_CURRENT_LIST_DIR}/..
     WORKING_DIRECTORY
-        ${RELEASE_PATH}
+        "${DEBUG_PATH}"
 )
 
 execute_process(
     COMMAND
-        ${CMAKE_COMMAND} --build . --target install
+        "${CMAKE_COMMAND}" --build . --target install
     WORKING_DIRECTORY
-        ${RELEASE_PATH}
+        "${DEBUG_PATH}"
+)
+
+# remove debug protoc
+execute_process(
+    COMMAND
+        ${CMAKE_COMMAND} -E remove_directory ${CMAKE_INSTALL_PREFIX}/bin
+)
+
+execute_process(
+    COMMAND
+    ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DPROTOBUF_ROOT=../.. ${CMAKE_CURRENT_LIST_DIR}/..
+    WORKING_DIRECTORY
+        "${RELEASE_PATH}"
+)
+
+execute_process(
+    COMMAND
+        "${CMAKE_COMMAND}" --build . --target install
+    WORKING_DIRECTORY
+        "${RELEASE_PATH}"
 )
 
 file(
     COPY
-        ${CMAKE_CURRENT_LIST_DIR}/../package.cmake
+        "${CMAKE_CURRENT_LIST_DIR}/package.cmake"
     DESTINATION
-        ${ROOT}/${PACKAGE_NAME}
+        "${ROOT}/${PACKAGE_NAME}"
+)
+
+file(
+    REMOVE_RECURSE
+    "${BUILD_PATH}"
 )
 
 execute_process(
     COMMAND
-        ${CMAKE_COMMAND} -E tar cf "${PACKAGE_NAME}.7z" --format=7zip -- "${PACKAGE_NAME}"
+        "${CMAKE_COMMAND}" -E tar cf "${PACKAGE_NAME}.7z" --format=7zip -- "${PACKAGE_NAME}"
     WORKING_DIRECTORY
-        ${ROOT}
+        "${ROOT}"
 )
+
