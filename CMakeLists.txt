@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.12.4)
 project(ProtobufCmakeNPMWrapper)
 
-include(${PROJECT_SOURCE_DIR}/rogii/npm/Include.cmake)
+set(
+    ROGII_FOLDER_PATH
+    "${CMAKE_CURRENT_LIST_DIR}/rogii"
+)
+include(${ROGII_FOLDER_PATH}/npm/Include.cmake)
+include(${ROGII_FOLDER_PATH}/environment.cmake)
 
 CNPM_PREPARE_PACKAGES(
     DEFAULT_REPOSITORY_URLS
