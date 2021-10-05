@@ -1,45 +1,21 @@
 cmake_minimum_required(VERSION 3.12.4)
 project(ProtobufCmakeNPMWrapper)
 
-include(${PROJECT_SOURCE_DIR}/cmake/npm/NastyPackageManager.cmake)
+set(
+    ROGII_FOLDER_PATH
+    "${CMAKE_CURRENT_LIST_DIR}/rogii"
+)
+include(${ROGII_FOLDER_PATH}/npm/Include.cmake)
+include(${ROGII_FOLDER_PATH}/environment.cmake)
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    NPM_ADD_PACKAGE(
-        NAME
-            msvs
-        VERSION
-            2019
-        BUILD_NUMBER
-            1
-    )
-
-    NPM_ADD_PACKAGE(
-        NAME
-            WindowsSDK
-        VERSION
-            10.0.18362.0
-        BUILD_NUMBER
-            2
-    )
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    NPM_ADD_PACKAGE(
-        NAME
-            gxx_runtime
-        VERSION
-            9.2.1
-        BUILD_NUMBER
-            0
-    )
-endif()
-
-NPM_PREPARE_PACKAGES(
+CNPM_PREPARE_PACKAGES(
     DEFAULT_REPOSITORY_URLS
     "$ENV{CNPM_URLS}"
 )
 
 add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
 
-add_subdirectory(protobuf-cmake)
+add_subdirectory(rogii/protobuf-cmake)
 
 if(WIN32)
     set_target_properties(
@@ -82,7 +58,7 @@ endif()
 # install missing file(s)
 install(
     FILES
-        ${PROJECT_SOURCE_DIR}/../src/google/protobuf/stubs/stl_util.h
+        ${PROJECT_SOURCE_DIR}/src/google/protobuf/stubs/stl_util.h
     DESTINATION
         ./include/google/protobuf/stubs
 )
