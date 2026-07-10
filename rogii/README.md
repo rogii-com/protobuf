@@ -29,6 +29,15 @@ installed into the package together with protobuf, so the resulting package is
 self-contained. To build without network access, clone abseil-cpp manually and
 pass `FETCHCONTENT_SOURCE_DIR_ABSL=<path>` to the configure step.
 
+Abseil pins its ABI options into the installed `absl/base/options.h` based on
+configure-time compile tests, which is why the wrapper sets a global
+`CMAKE_CXX_STANDARD`. Sanity check for a freshly built package:
+`include/absl/base/options.h` must contain
+`#define ABSL_OPTION_USE_STD_STRING_VIEW 1`, and the
+`ABSL_INTERNAL_AT_LEAST_CXX17` test must be reported as `Success` in the
+configure log. Otherwise consumers get LNK2019 mismatches around
+`absl::string_view`.
+
 ## Consumers
 
 `package.cmake` is the package entry point included by

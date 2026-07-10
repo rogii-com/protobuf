@@ -17,6 +17,14 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
 endif()
 
+# The C++ standard must be set GLOBALLY (not only on the protobuf targets):
+# abseil pins its ABI options (ABSL_OPTION_USE_STD_STRING_VIEW etc.) into the
+# installed options.h based on configure-time compile tests. Without this the
+# tests run with the compiler default (C++14 on MSVC) while the libraries are
+# built as C++17, and the package ends up ABI-inconsistent with itself.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # the static libraries may end up inside consumers' shared libraries
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -42,7 +50,9 @@ set(CMAKE_DEBUG_POSTFIX "d")
 
 set(protobuf_BUILD_TESTS OFF)
 set(protobuf_BUILD_LIBPROTOC ON)
-set(protobuf_BUILD_LIBUPB OFF)
+# libupb must stay enabled: the rust generator inside libprotoc includes
+# upb bootstrap headers that are only generated while building libupb
+set(protobuf_BUILD_LIBUPB ON)
 set(protobuf_WITH_ZLIB OFF)
 set(protobuf_MSVC_STATIC_RUNTIME OFF)
 

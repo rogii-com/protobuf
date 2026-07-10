@@ -94,6 +94,8 @@ execute_process(
     ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} ${CMAKE_CURRENT_LIST_DIR}
     WORKING_DIRECTORY
         "${DEBUG_PATH}"
+    COMMAND_ERROR_IS_FATAL
+        ANY
 )
 
 execute_process(
@@ -101,6 +103,8 @@ execute_process(
         "${CMAKE_COMMAND}" --build . --target install
     WORKING_DIRECTORY
         "${DEBUG_PATH}"
+    COMMAND_ERROR_IS_FATAL
+        ANY
 )
 
 # remove debug protoc: the release run below reinstalls bin/protoc at the very
@@ -115,6 +119,8 @@ execute_process(
     ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} ${CMAKE_CURRENT_LIST_DIR}
     WORKING_DIRECTORY
         "${RELEASE_PATH}"
+    COMMAND_ERROR_IS_FATAL
+        ANY
 )
 
 execute_process(
@@ -122,6 +128,8 @@ execute_process(
         "${CMAKE_COMMAND}" --build . --target install
     WORKING_DIRECTORY
         "${RELEASE_PATH}"
+    COMMAND_ERROR_IS_FATAL
+        ANY
 )
 
 file(
