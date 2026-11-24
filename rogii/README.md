@@ -17,6 +17,10 @@ Environment variables:
 - `CNPM_ROOT` — cnpm download cache
 - `BUILD_NUMBER` — package build number (default `0`)
 - `TAG` — package tag suffix (default: short git hash)
+- `SANITIZER` — GCC/Clang `-fsanitize=` value (e.g. `address`) applied to
+  protobuf, abseil and utf8_range, including `protoc`; empty by default. A
+  sanitized consumer needs a package built with the same sanitizer, so give it
+  its own tag, e.g. `TAG=gxx14.2.0_asan`
 
 On Windows run from an environment prepared by
 `build/windows/jenkins_env` (MSVC toolchain + Windows SDK), Ninja required.
