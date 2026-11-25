@@ -1,0 +1,106 @@
+set(
+    PROTOBUF_DEFAULT_PACKAGE
+    "@DEFAULT_PACKAGE@"
+)
+
+set(
+    PROTOBUF_ASAN_PACKAGE
+    "@ASAN_PACKAGE@"
+)
+
+set(
+    PROTOBUF_PACKAGE_VARIANT
+    "${PROTOBUF_DEFAULT_PACKAGE}"
+)
+
+# The inline container annotations of protobuf and abseil
+# (ABSL_ANNOTATE_CONTIGUOUS_CONTAINER) are active only in instrumented code, so
+# an ASan consumer linked with the plain libraries reports false container-overflow.
+if(CMAKE_CXX_FLAGS MATCHES "(^| )-fsanitize=([^ ]*,)?address(,| |$)")
+    if(NOT PROTOBUF_ASAN_PACKAGE)
+        message(
+            FATAL_ERROR
+            "-fsanitize=address: this protobuf package has no asan variant for the platform."
+        )
+    endif()
+
+    set(
+        PROTOBUF_PACKAGE_VARIANT
+        "${PROTOBUF_ASAN_PACKAGE}"
+    )
+endif()
+
+# A build tree configured with the other variant before keeps its config
+# directories in the cache, and find_package() would reuse them.
+foreach(PROTOBUF_CONFIG_DIR protobuf_DIR absl_DIR utf8_range_DIR)
+    if(DEFINED CACHE{${PROTOBUF_CONFIG_DIR}})
+        file(
+            TO_CMAKE_PATH
+            "$CACHE{${PROTOBUF_CONFIG_DIR}}"
+            PROTOBUF_CACHED_DIR
+        )
+
+        string(
+            FIND
+                "${PROTOBUF_CACHED_DIR}"
+                "/${PROTOBUF_PACKAGE_VARIANT}/"
+                PROTOBUF_VARIANT_POSITION
+        )
+
+        if(PROTOBUF_VARIANT_POSITION EQUAL -1)
+            unset(
+                ${PROTOBUF_CONFIG_DIR}
+                CACHE
+            )
+        endif()
+    endif()
+endforeach()
+
+# This file is included from CNPM_PREPARE_PACKAGES, whose scope holds its settings under the
+# ${P} prefix; the variant is fetched and included right away, so protobuf is ready before the
+# packages declared after it.
+NPM_PREPARE_PACKAGE(
+    PACKAGE_NAME
+        ${PROTOBUF_PACKAGE_VARIANT}
+    REPOSITORY_URLS
+        ${${P}REPOSITORY_URLS}
+    FORCE
+        ${${P}FORCE}
+    ROOT
+        ${${P}ROOT}
+    TMP
+        ${${P}TMP}
+    ARCHIVE_TYPE
+        7z
+)
+
+message(
+    STATUS
+    "protobuf package variant: ${PROTOBUF_PACKAGE_VARIANT}"
+)
+
+include("${${P}ROOT}/${PROTOBUF_PACKAGE_VARIANT}/package.cmake")
+
+unset(
+    PROTOBUF_DEFAULT_PACKAGE
+)
+
+unset(
+    PROTOBUF_ASAN_PACKAGE
+)
+
+unset(
+    PROTOBUF_PACKAGE_VARIANT
+)
+
+unset(
+    PROTOBUF_CONFIG_DIR
+)
+
+unset(
+    PROTOBUF_CACHED_DIR
+)
+
+unset(
+    PROTOBUF_VARIANT_POSITION
+)

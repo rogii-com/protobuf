@@ -54,6 +54,45 @@ include(
     "${CMAKE_CURRENT_LIST_DIR}/version.cmake"
 )
 
+# default: the plain build; asan: the whole package built with -fsanitize=address,
+# which the protobuf meta package hands to consumers whose CMAKE_CXX_FLAGS have it
+set(
+    VARIANT
+    default
+)
+
+if(DEFINED ENV{PROTOBUF_VARIANT})
+    set(
+        VARIANT
+        "$ENV{PROTOBUF_VARIANT}"
+    )
+endif()
+
+set(
+    SANITIZER
+    ""
+)
+
+if(VARIANT STREQUAL "asan")
+    if(CMAKE_HOST_WIN32)
+        message(
+            FATAL_ERROR
+            "The asan variant is built with GCC/Clang only"
+        )
+    endif()
+
+    set(
+        SANITIZER
+        address
+    )
+elseif(NOT VARIANT STREQUAL "default")
+    message(
+        FATAL_ERROR
+        "Unknown PROTOBUF_VARIANT '${VARIANT}': expected default or asan"
+    )
+endif()
+
+
 set(
     BUILD_PATH
     "${CMAKE_CURRENT_LIST_DIR}/../build"
@@ -61,7 +100,7 @@ set(
 
 set(
     PACKAGE_NAME
-    "protobuf-${ROGII_PKG_VERSION}-${ARCH}-${BUILD}${TAG}"
+    "protobuf${VARIANT}-${ROGII_PKG_VERSION}-${ARCH}-${BUILD}${TAG}"
 )
 
 set(
@@ -91,7 +130,7 @@ file(
 
 execute_process(
     COMMAND
-    ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DROGII_SANITIZER=$ENV{SANITIZER} ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DROGII_SANITIZER=${SANITIZER} ${CMAKE_CURRENT_LIST_DIR}
     WORKING_DIRECTORY
         "${DEBUG_PATH}"
     COMMAND_ERROR_IS_FATAL
@@ -116,7 +155,7 @@ execute_process(
 
 execute_process(
     COMMAND
-    ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DROGII_SANITIZER=$ENV{SANITIZER} ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DROGII_SANITIZER=${SANITIZER} ${CMAKE_CURRENT_LIST_DIR}
     WORKING_DIRECTORY
         "${RELEASE_PATH}"
     COMMAND_ERROR_IS_FATAL
