@@ -61,4 +61,17 @@ set(protobuf_MSVC_STATIC_RUNTIME OFF)
 # to reuse a local abseil checkout instead of downloading it from GitHub
 set(protobuf_FORCE_FETCH_DEPENDENCIES ON)
 
+# a consumer built with a sanitizer needs protobuf and abseil built with the
+# same one: their inline container annotations (ABSL_ANNOTATE_CONTIGUOUS_CONTAINER)
+# are active only in instrumented code, and mixing instrumented and plain code
+# reports false container-overflow
+set(ROGII_SANITIZER "" CACHE STRING "GCC/Clang -fsanitize= value for the whole package, e.g. address")
+if(ROGII_SANITIZER)
+    if(MSVC)
+        message(FATAL_ERROR "ROGII_SANITIZER is supported for GCC/Clang only")
+    endif()
+    add_compile_options(-fsanitize=${ROGII_SANITIZER} -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=${ROGII_SANITIZER})
+endif()
+
 add_subdirectory("${ROGII_FOLDER_PATH}/.." protobuf)
