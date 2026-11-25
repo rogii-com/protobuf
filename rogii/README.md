@@ -1,8 +1,9 @@
 # Rogii protobuf package build
 
-Builds the `protobuf-<version>-<arch>-<build><tag>.7z` cnpm package
-(Debug + RelWithDebInfo static libraries, release `protoc`, headers and the
-CMake config files of protobuf, abseil and utf8_range).
+Builds a variant cnpm package (Debug + RelWithDebInfo static libraries,
+release `protoc`, headers and the CMake config files of protobuf, abseil and
+utf8_range) and the `protobuf` meta package that consumers pin. CI:
+[3rd_party/upstream/protobuf](https://gitlab.rogii.com/3rd_party/upstream/protobuf).
 
 ## Usage
 
@@ -17,10 +18,10 @@ Environment variables:
 - `CNPM_ROOT` — cnpm download cache
 - `BUILD_NUMBER` — package build number (default `0`)
 - `TAG` — package tag suffix (default: short git hash)
-- `SANITIZER` — GCC/Clang `-fsanitize=` value (e.g. `address`) applied to
-  protobuf, abseil and utf8_range, including `protoc`; empty by default. A
-  sanitized consumer needs a package built with the same sanitizer, so give it
-  its own tag, e.g. `TAG=gxx14.2.0_asan`
+- `PROTOBUF_VARIANT` — `default` (the default) builds
+  `protobufdefault-<version>-<arch>-<build><tag>.7z`; `asan` (GCC/Clang only)
+  builds `protobufasan-...` with protobuf, abseil and utf8_range, including
+  `protoc`, compiled with `-fsanitize=address`
 
 On Windows run from an environment prepared by
 `build/windows/jenkins_env` (MSVC toolchain + Windows SDK), Ninja required.
@@ -44,8 +45,21 @@ configure log. Otherwise consumers get LNK2019 mismatches around
 
 ## Consumers
 
-`package.cmake` is the package entry point included by
-`CNPM_PREPARE_PACKAGES()`. It runs `find_package(protobuf CONFIG)` against the
+Consumers pin the `protobuf` meta package. Its `package.cmake`
+(`meta/package.cmake.in`, made by `build_meta_package.cmake` from the variant
+archives in `ENV_INSTALL`) fetches and includes one variant: `protobufasan`
+when the consumer's `CMAKE_CXX_FLAGS` contain `-fsanitize=address`,
+`protobufdefault` otherwise. The inline container annotations of protobuf and
+abseil (`ABSL_ANNOTATE_CONTIGUOUS_CONTAINER`) are active only in instrumented
+code, so an ASan consumer linked with the plain libraries reports false
+container-overflow.
+
+`test_package.cmake` makes the meta package from the archives in
+`ENV_INSTALL`, then builds and runs `test/` against each variant, and checks
+that the default variant in an ASan consumer does report that
+container-overflow, so the probe is known to reach the annotated code.
+
+A variant's `package.cmake` is the entry point the meta package includes. It runs `find_package(protobuf CONFIG)` against the
 package prefix, which provides the same interface as the old hand-written
 package: `protobuf::libprotobuf`, `protobuf::libprotoc`, `protobuf::protoc`
 targets and `protobuf_generate()` / `protobuf_generate_cpp()` commands
