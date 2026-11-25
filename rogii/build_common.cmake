@@ -69,68 +69,88 @@ set(
     ${ROOT}/${PACKAGE_NAME}
 )
 
-set(
-    DEBUG_PATH
-    "${BUILD_PATH}/debug"
-)
+# Debug and RelWithDebInfo of one variant installed into one prefix
+function(rogii_build_variant VARIANT_PREFIX VARIANT_BUILD_PATH SANITIZER)
+    set(
+        DEBUG_PATH
+        "${VARIANT_BUILD_PATH}/debug"
+    )
 
-set(
-    RELEASE_PATH
-    "${BUILD_PATH}/release"
-)
+    set(
+        RELEASE_PATH
+        "${VARIANT_BUILD_PATH}/release"
+    )
 
-file(
-    MAKE_DIRECTORY
-    "${DEBUG_PATH}"
-)
-
-file(
-    MAKE_DIRECTORY
-    "${RELEASE_PATH}"
-)
-
-execute_process(
-    COMMAND
-    ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DROGII_SANITIZER=$ENV{SANITIZER} ${CMAKE_CURRENT_LIST_DIR}
-    WORKING_DIRECTORY
+    file(
+        MAKE_DIRECTORY
         "${DEBUG_PATH}"
-    COMMAND_ERROR_IS_FATAL
-        ANY
-)
+    )
 
-execute_process(
-    COMMAND
-        "${CMAKE_COMMAND}" --build . --target install
-    WORKING_DIRECTORY
-        "${DEBUG_PATH}"
-    COMMAND_ERROR_IS_FATAL
-        ANY
-)
-
-# remove debug protoc: the release run below reinstalls bin/protoc at the very
-# same path (protoc has no debug postfix), so the CMake export files stay valid
-execute_process(
-    COMMAND
-        ${CMAKE_COMMAND} -E remove_directory ${CMAKE_INSTALL_PREFIX}/bin
-)
-
-execute_process(
-    COMMAND
-    ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX} -DROGII_SANITIZER=$ENV{SANITIZER} ${CMAKE_CURRENT_LIST_DIR}
-    WORKING_DIRECTORY
+    file(
+        MAKE_DIRECTORY
         "${RELEASE_PATH}"
-    COMMAND_ERROR_IS_FATAL
-        ANY
+    )
+
+    execute_process(
+        COMMAND
+        ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=${VARIANT_PREFIX} -DROGII_SANITIZER=${SANITIZER} ${CMAKE_CURRENT_LIST_DIR}
+        WORKING_DIRECTORY
+            "${DEBUG_PATH}"
+        COMMAND_ERROR_IS_FATAL
+            ANY
+    )
+
+    execute_process(
+        COMMAND
+            "${CMAKE_COMMAND}" --build . --target install
+        WORKING_DIRECTORY
+            "${DEBUG_PATH}"
+        COMMAND_ERROR_IS_FATAL
+            ANY
+    )
+
+    # remove debug protoc: the release run below reinstalls bin/protoc at the very
+    # same path (protoc has no debug postfix), so the CMake export files stay valid
+    execute_process(
+        COMMAND
+            ${CMAKE_COMMAND} -E remove_directory ${VARIANT_PREFIX}/bin
+    )
+
+    execute_process(
+        COMMAND
+        ${CMAKE_COMMAND} -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${VARIANT_PREFIX} -DROGII_SANITIZER=${SANITIZER} ${CMAKE_CURRENT_LIST_DIR}
+        WORKING_DIRECTORY
+            "${RELEASE_PATH}"
+        COMMAND_ERROR_IS_FATAL
+            ANY
+    )
+
+    execute_process(
+        COMMAND
+            "${CMAKE_COMMAND}" --build . --target install
+        WORKING_DIRECTORY
+            "${RELEASE_PATH}"
+        COMMAND_ERROR_IS_FATAL
+            ANY
+    )
+endfunction()
+
+rogii_build_variant(
+    "${CMAKE_INSTALL_PREFIX}"
+    "${BUILD_PATH}/plain"
+    ""
 )
 
-execute_process(
-    COMMAND
-        "${CMAKE_COMMAND}" --build . --target install
-    WORKING_DIRECTORY
-        "${RELEASE_PATH}"
-    COMMAND_ERROR_IS_FATAL
-        ANY
-)
+# package.cmake switches an ASan consumer to this prefix: inline container
+# annotations of protobuf and abseil are active only in instrumented code, so
+# an ASan consumer linked with the plain libraries reports false container-overflow
+if(NOT CMAKE_HOST_WIN32)
+    rogii_build_variant(
+        "${CMAKE_INSTALL_PREFIX}/asan"
+        "${BUILD_PATH}/asan"
+        "address"
+    )
+endif()
 
 file(
     COPY

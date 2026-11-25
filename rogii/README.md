@@ -17,10 +17,10 @@ Environment variables:
 - `CNPM_ROOT` — cnpm download cache
 - `BUILD_NUMBER` — package build number (default `0`)
 - `TAG` — package tag suffix (default: short git hash)
-- `SANITIZER` — GCC/Clang `-fsanitize=` value (e.g. `address`) applied to
-  protobuf, abseil and utf8_range, including `protoc`; empty by default. A
-  sanitized consumer needs a package built with the same sanitizer, so give it
-  its own tag, e.g. `TAG=gxx14.2.0_asan`
+
+On a non-Windows host the package also carries an AddressSanitizer variant:
+protobuf, abseil and utf8_range (including `protoc`) built with
+`-fsanitize=address` and installed whole into the `asan/` subdirectory.
 
 On Windows run from an environment prepared by
 `build/windows/jenkins_env` (MSVC toolchain + Windows SDK), Ninja required.
@@ -50,3 +50,9 @@ package prefix, which provides the same interface as the old hand-written
 package: `protobuf::libprotobuf`, `protobuf::libprotoc`, `protobuf::protoc`
 targets and `protobuf_generate()` / `protobuf_generate_cpp()` commands
 (the latter via `protobuf_MODULE_COMPATIBLE`).
+
+A consumer whose `CMAKE_CXX_FLAGS` contain `-fsanitize=address` gets the
+`asan/` variant: the inline container annotations of protobuf and abseil
+(`ABSL_ANNOTATE_CONTIGUOUS_CONTAINER`) are active only in instrumented code,
+so an ASan consumer linked with the plain libraries reports false
+container-overflow.

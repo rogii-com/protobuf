@@ -16,12 +16,34 @@ endif()
 # available after find_package()
 set(protobuf_MODULE_COMPATIBLE TRUE)
 
+set(
+    ROGII_PROTOBUF_PREFIX
+    "${CMAKE_CURRENT_LIST_DIR}"
+)
+
+# an ASan consumer needs the ASan-built libraries: inline container
+# annotations of protobuf and abseil are active only in instrumented code, so
+# mixing them with the plain libraries reports false container-overflow
+if(CMAKE_CXX_FLAGS MATCHES "(^| )-fsanitize=([^ ]*,)?address(,| |$)")
+    set(
+        ROGII_PROTOBUF_PREFIX
+        "${CMAKE_CURRENT_LIST_DIR}/asan"
+    )
+    if(NOT EXISTS "${ROGII_PROTOBUF_PREFIX}")
+        message(
+            FATAL_ERROR
+            "This protobuf package has no ASan variant, required by -fsanitize=address in CMAKE_CXX_FLAGS"
+        )
+    endif()
+endif()
+
 list(
     INSERT
         CMAKE_PREFIX_PATH
         0
-        "${CMAKE_CURRENT_LIST_DIR}"
+        "${ROGII_PROTOBUF_PREFIX}"
 )
+unset(ROGII_PROTOBUF_PREFIX)
 
 find_package(
     protobuf
